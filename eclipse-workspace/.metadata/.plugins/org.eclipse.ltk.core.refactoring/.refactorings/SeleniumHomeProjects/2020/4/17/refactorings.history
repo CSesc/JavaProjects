@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Rename field &apos;xpath&apos; in &apos;SelTest&apos; to &apos;loginXpath&apos;&#x0D;&#x0A;- Original project: &apos;NEWSel&apos;&#x0D;&#x0A;- Original element: &apos;SelTest.xpath&apos;&#x0D;&#x0A;- Renamed element: &apos;SelTest.loginXpath&apos;&#x0D;&#x0A;- Update references to refactored element&#x0D;&#x0A;- Update textual occurrences in comments and strings" delegate="false" deprecate="false" description="Rename field &apos;xpath&apos;" flags="589830" getter="false" id="org.eclipse.jdt.ui.rename.field" input="/src&lt;{SelTest.java[SelTest^xpath" name="loginXpath" references="true" setter="false" stamp="1587281236033" textual="false" version="1.0"/>
+</session>

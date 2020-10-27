@@ -1,0 +1,14 @@
+import org.openqa.selenium.WebDriver;
+
+public class SelTest {
+
+	public static void main(String[] args) throws InterruptedException {
+		System.setProperty("webdriver.chrome.driver", "C://bin");
+System.out.println("HELLO");
+WebDriver driver= new ChromeDriver();
+driver.get("https://www.google.com");
+Thread.sleep(1000);
+driver.quit();
+	}
+
+}

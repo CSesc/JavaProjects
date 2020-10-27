@@ -1,0 +1,20 @@
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.firefox.FirefoxDriver;
+
+public class MuskanSelenium {
+
+	public static void main(String[] args) {
+		// TODO Auto-generated method stub
+		String url="https://www.google.com/";
+        System.setProperty("webdriver.gecko.driver", "C://bin//geckodriver.exe");
+        
+        
+        WebDriver driver=new FirefoxDriver();
+        driver.get(url);
+        driver.findElement(By.name("q")).sendKeys("Muskan");
+        Thread.sleep(10000);
+        driver.quit();
+	}
+
+}

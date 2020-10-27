@@ -1,0 +1,25 @@
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.firefox.FirefoxDriver;
+
+public class MuskanSelenium {
+
+	public static void main(String[] args) throws InterruptedException {
+		// TODO Auto-generated method stub
+		String url="https://fullstackprofessio.wixsite.com/academy";
+        System.setProperty("webdriver.gecko.driver", "C://bin//geckodriver.exe");
+        
+        
+        WebDriver driver=new FirefoxDriver();
+        driver.get(url);
+        driver.findElement(By.xpath("//*[@id=\"DrpDwnMn0-pl02label\"]")).click();
+        String heading=driver.findElement(By.xpath("//*[@id=\"comp-kgqp796j\"]/h5/span")).getText();
+        if(heading=="AUTOMATION TEST PROFESSIONAL")
+        	System.out.println("Pass");
+        else
+        	System.out.println("Fail");
+        Thread.sleep(10000);
+        driver.quit();
+	}
+
+}
