@@ -1,0 +1,1 @@
+java -jar C:\bin\fb\AddFriend.jar
