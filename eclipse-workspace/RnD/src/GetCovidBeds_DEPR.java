@@ -21,7 +21,7 @@ import org.openqa.selenium.ie.InternetExplorerDriver;
 import org.openqa.selenium.io.FileHandler;
 
 @SuppressWarnings("unused")
-public class GetCovidBeds {
+public class GetCovidBeds_DEPR {
 	//// CONFIGS
 	private static boolean debug=false;
 	private static float shortTime=.5f;

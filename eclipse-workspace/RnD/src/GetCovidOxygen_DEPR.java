@@ -25,7 +25,7 @@ import org.openqa.selenium.io.FileHandler;
 
 
 @SuppressWarnings("unused")
-public class GetCovidOxygen {
+public class GetCovidOxygen_DEPR {
 	//// CONFIGS
 	private static boolean debug=true;
 	private static float shortTime=.5f;
