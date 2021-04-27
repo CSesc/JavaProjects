@@ -30,7 +30,7 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
 @SuppressWarnings("unused")
-public class ReVampGetCovidBeds2 {
+public class Test {
 	//// CONFIGS
 	private static boolean debug=false;
 	private static float shortTime=.5f;
