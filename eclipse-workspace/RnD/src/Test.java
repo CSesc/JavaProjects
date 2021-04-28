@@ -32,85 +32,158 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 @SuppressWarnings("unused")
 public class Test {
 	//// CONFIGS
-	private static boolean debug=false;
-	private static float shortTime=.5f;
-	private static float mediumTime=1.2f;
+	private static boolean debug=true;
+
 	private static int normalImplicitWait=3;
 	private static String disclaimer="This information is extracted from: https://covidrelief.glideapp.io/, we hold no responsibility on the validity or accuracy of the information\nThis is done only to help peple in urgent needs get instant information";
 	///////////////
-    private static String workflow="Oxygen Availability"; //Oxygen Availability		Vacant Beds Tracker		Ambulance Availability
-	private static String city="Delhi";
-	private static String fileName="Beds"+"_"+workflow+".csv";
+	private static String city="Delhi"; //Delhi  Gurugram
+	private static String workflow="Vacant Beds Tracker";
+    //private static String workflow="Oxygen Availability";		
+    //private static String workflow="Ambulance Availability";
+    ///////////
+	private static float shortTime=.5f;
+	private static float mediumTime=1.2f;
+	private static String fileName=city+"_"+workflow+".csv";
 	static WebDriver driver ;
-	//static String url="https://covidrelief.glideapp.io/dl/ewAiAHQAIgA6ADAALAAiAHMAIgA6ACIAbQBlAG4AdQAtADIAMQBlADcANgA4ADkANwAtAGQANgBiADYALQA0ADQANgAzAC0AOABmAGMAMQAtADcAMwA1ADAAOQAxADgAMABlADgAZgA2AC0AMQBkAGYAOQBmAGUAYgAxAGQANABmAGMAYQAzAGYAZgA4AGYAOAA3ADEAOAA1ADkAMgA1ADIAZABiAGMAZQAwACIALAAiAHIAIgA6ACIAZABIAE4ASQBYAGQAYgB2AFEARgB1AGYALQB4AG0AdgBRAHUATwBjADAAZwAiACwAIgBuACIAOgAiAEQAZQBsAGgAaQAiAH0A";
+	static String bedsDelhiUrl="https://covidrelief.glideapp.io/dl/ewAiAHQAIgA6ADAALAAiAHMAIgA6ACIAbQBlAG4AdQAtADIAMQBlADcANgA4ADkANwAtAGQANgBiADYALQA0ADQANgAzAC0AOABmAGMAMQAtADcAMwA1ADAAOQAxADgAMABlADgAZgA2AC0AMQBkAGYAOQBmAGUAYgAxAGQANABmAGMAYQAzAGYAZgA4AGYAOAA3ADEAOAA1ADkAMgA1ADIAZABiAGMAZQAwACIALAAiAHIAIgA6ACIAZABIAE4ASQBYAGQAYgB2AFEARgB1AGYALQB4AG0AdgBRAHUATwBjADAAZwAiACwAIgBuACIAOgAiAEQAZQBsAGgAaQAiAH0A";
+	/////XPATHS
 	static String url="https://covidrelief.glideapp.io/";
     static String searchBox="//input";
-
     static String mainPageRowElements="//div[@role='cell']";
     static String rowElements="//div[@role='button']";
     static String clickTextXpath="//*[contains(text(),'replaceText')]";
-
-    
     static String hospitalRowElements="//div[@role='row']";
-    //static String hospitalRowElements="//*[@class='ReactVirtualized__Grid__innerScrollContainer']/div";
-  
 	private static String commentsXpath="//div[@data-test='app-comment']";
 	private static String backButton="//button[@data-test='back-button']";
 	private static Set <String> finalRows = new HashSet<String>() ;
 
-	 public static void main(String[] args) throws InterruptedException {
-		 
-		 
-		 	
+	public static void main(String[] args) throws InterruptedException {
 		 	System.out.println("############## STARTING ############## ");
 		 	
-		 	fileName=workflow+(workflow=="Vacant Beds Tracker"?"_"+city:"")+getTimeAppender()+".csv";
-		 	
-		 	
-	        System.setProperty("webdriver.gecko.driver", "C://bin//geckodriver.exe");
 	        initialize();
 	        clickByText(workflow);
-	        searchAndOpenCityPage();	//if Wrkflow is for Vacant Beds 
+	        searchAndOpenCityPage();	//if Workflow is for Vacant Beds 
 	        getList() ;
 	        
-//	        driver.findElement(By.xpath(searchBox)).sendKeys(city);
-//	        WebElement cityRow= getRowElement( rowElements,city);
-//	        clickWebElement(cityRow);sleep(mediumTime);
-	        PrepareFile();
-    	
-    	processRows();
+	       PrepareFile();
+	       processRows2();
     	//fprint(disclaimer);
-        System.out.println("################ END OF PROGRAM ##################");
-        Thread.sleep(20000);
-        driver.close();
+	        System.out.println("################ END OF PROGRAM ##################");
+	        Thread.sleep(20000);
+	        driver.close();
 	}
+	private static void processRows2() {
+		print("ITERATING LIST SIZE:"+finalRows.size());
+        int ctr=1;
+        Iterator<String> itr = finalRows.iterator(); 
+        while(itr.hasNext()){
+        	  String Content=itr.next();
+        	  print(ctr++ +"/"+finalRows.size()+" : "+Content);
+        	  serchAndClick(Content);
+        	  fetchData(Content);
+        	  clickIfPresent(backButton);
+        	} 
+		
+//		
+//		List<WebElement> hospitalRows= driver.findElements(By.xpath(hospitalRowElements));
+//		 String hospital="//div[@class='summary-title']";
+//		 String bed="//div[@class='summary-subtitle']";
+//		 String phone="//div[@class='textStyle']";
+//		
+//		 for(int i =1; i <hospitalRows.size()-1;i++)
+//		 {
+//			 
+//			 hospitalRows= driver.findElements(By.xpath(hospitalRowElements));
+//			 WebElement currentElement=hospitalRows.get(i);
+//			 if(isClicable(currentElement))
+//					 {
+//				 		i++;
+//				 		//print("City is now:"+currentElement.getText());
+//					 }
+//			 JavascriptExecutor js = (JavascriptExecutor) driver;
+//			 if(i>10)
+//				 js.executeScript("arguments[0].scrollIntoView(true);",hospitalRows.get(i-1));
+//			 sleep(mediumTime);
+//			 js.executeScript("arguments[0].setAttribute('style', 'background: yellow; border: 2px solid red;');", currentElement);
+//			 clickWebElement(currentElement);sleep(mediumTime);
+//			 print(i+" / "+hospitalRows.size()+"\tprocessing :\t"+getText(hospital));
+//			 String commentText=getComments();
+//			 String beds=getText(bed);//
+//			 if(!city.contentEquals("Raipur") && !city.contentEquals("Pune")  )
+//				 beds=beds.replace("Beds: ","");
+//			 fprint(getText(hospital)+","+getText(phone)+","+beds+","+commentText);//+","+commentText);
+//			 if(!driver.getTitle().contains(workflow))
+//				 clickIfPresent(backButton);
+//			 sleep(shortTime);
 
-	 private static void getList() {
+		 }
+		 
+		  
+
+	
+	 private static void fetchData(String currentSearch) {
+		String heading="//div[@class='summary-title']";
+		 String subHeading="//div[@class='summary-subtitle']";
+		 String phone="//div[@class='textStyle']";
+		 String generic="//div[@role='button']";
+		 String detailZ="";
+		 if(driver.getTitle().contains(currentSearch))
+		{
+			 List <WebElement> details=driver.findElements(By.xpath(generic));
+			 if(details.size()>2)
+			 {			 
+				 for(int x=0;x<details.size();x++)
+					 detailZ="D:"+getElementText(details.get(x))+","+detailZ;
+			 }
+			 debug("detail:"+detailZ);
+			 String comments=getComments();
+			
+			 fprint("H1"+getText(heading)+","+"H2"+getText(subHeading)+","+detailZ+",C "+comments);
+		}
+
+//		 String beds=getText(subHeading);//
+//		 if(!city.contentEquals("Raipur") && !city.contentEquals("Pune")  )
+//			 beds=beds.replace("Beds: ","");
+//		 fprint(getText(heading)+","+getText(phone)+","+beds+","+commentText);//+","+commentText);
+			
+	}
+	private static void getList() {
 	        
 	        List<WebElement> rows = driver.findElements(By.xpath(hospitalRowElements));
      	String prevLoop="current";
-     	String curentLoop="last";String content="";
-     	while(!curentLoop.contentEquals(prevLoop))
-	        {	
+     	String curentLoop="last";
+     	String content="";
+     	error("\n\nWHILE HAS BEEN DISABLED");
+    // 	while(!curentLoop.contentEquals(prevLoop))
+	 //       {	
 	        	rows = driver.findElements(By.xpath(hospitalRowElements));
-	        	for(int j=0;j<rows.size();j++)
+	        	for(int i=0;i<rows.size();i++)
 		        {
-	        		content=rows.get(j).getText().replaceAll("\\r\\n|\\r|\\n", " | ");
-		        	finalRows.add(content);
-		        	print(content);
+	        		content=rows.get(i).getText();
+	        		content=content.replaceAll("\\r\\n|\\r|\\n", " \\| ");
+	        		print("Content1: "+content);
+	        		if(content.contains("|"))
+	        			{
+	        				content =content.split(" \\| ")[1];
+	        				print("PContent2: "+content);
+	        			}
+	        		
+	        		finalRows.add(content);
+		        	//print(content);
 		        	rows = driver.findElements(By.xpath(hospitalRowElements));//refresh
 		        }
 	        	prevLoop=curentLoop;
 	        	curentLoop=content;
 	        	scrollToElement(rows.get(rows.size()-1));sleep(1);
 
-	        }
-	        System.out.println("ITERATING SET");
-	        int ctr=1;
-	        Iterator<String> itr = finalRows.iterator(); 
-	        while(itr.hasNext()){
-	        	  print(ctr++ +" : "+itr.next() );
-	        	}
+	  //      }
+//	        print("ITERATING LIST");
+//	        int ctr=1;
+//	        Iterator<String> itr = finalRows.iterator(); 
+//	        while(itr.hasNext()){
+//	        	  //print(ctr++ +" : "+itr.next() );
+//	        	}
 	        
 		
 	}
@@ -121,7 +194,10 @@ public class Test {
 	}
 
 	private static void clickByText(String text) {
-		clickWebElement(driver.findElement(By.xpath(clickTextXpath.replace("replaceText",text))));
+		WebElement element=driver.findElement(By.xpath(clickTextXpath.replace("replaceText",text)));
+		waitForClicable(element);
+		//sleep(1.3);
+		clickWebElement(element);
 		sleep(mediumTime);		
 	}
 
@@ -129,34 +205,43 @@ public class Test {
 	
 
 
+	private static void waitForClicable(WebElement element) {
+		System.out.println("AWAITING CLICKABLE: " + element.getText());
+		WebDriverWait wait = new WebDriverWait(driver, 2000); 
+		element = wait.until(ExpectedConditions.elementToBeClickable(element));
+	}
 	private static void searchAndOpenCityPage() {
-		if(workflow=="Vacant Beds")
+		if(workflow=="Vacant Beds Tracker")
 			serchAndClick(city);
+	}
+	private static void serchAndClickRowElement(String text) {
+		driver.findElement(By.xpath(searchBox)).sendKeys(text);
+		clickIfPresent(rowElements);
+
 	}
 
 
-	private static void serchAndClick(String city) {
-		driver.findElement(By.xpath(searchBox)).sendKeys(city);
-		clickByText(city);
+	private static void serchAndClick(String text) {
+		WebElement searchBar=driver.findElement(By.xpath(searchBox));
+		searchBar.clear();
+		searchBar.sendKeys(text);
+		clickByText(text);
 
 	}
 
 
 	private static void initialize() {
+		fileName=workflow+(workflow=="Vacant Beds Tracker"?"_"+city+"":"")+getTimeAppender()+".csv";
+        System.setProperty("webdriver.gecko.driver", "C://bin//geckodriver.exe");
         driver = new FirefoxDriver();
         driver.manage().timeouts().implicitlyWait(normalImplicitWait, TimeUnit.SECONDS);
         driver.manage().window().maximize();
         driver.get(url); 		
-        zoomOut();
+        //zoomOut();
 	}
 
 
 	private static void processRows() {
-		 print("ZOOM OUT and SCROLL DOWN AND UP ");
-		 if(!debug)
-			 sleep(10);
-		 print("CAPTURE ELEMENTS COMPLETED");
-
 		 List<WebElement> hospitalRows= driver.findElements(By.xpath(hospitalRowElements));
 		 String hospital="//div[@class='summary-title']";
 		 String bed="//div[@class='summary-subtitle']";
@@ -221,7 +306,7 @@ public class Test {
 		return commentText;
 	}
 
-	private static void sleep(float i) {
+	private static void sleep(double i) {
 		try {int sleep=(int) i;
 			Thread.sleep(sleep*1000);
 		} catch (InterruptedException e) {
@@ -261,8 +346,8 @@ public class Test {
 	private static void clickIfPresent(String xp) {
 		 if(isElementPresent(xp))
 		 {
-			 //System.out.println("Clicking Element Now: "+xp);
-			 driver.findElement(By.xpath(xp)).click();;
+			 if(!driver.getTitle().contains(workflow))
+				 driver.findElement(By.xpath(xp)).click();;
 		 }
 		 }
 

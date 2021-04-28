@@ -33,56 +33,45 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 public class ReVampGetCovidBeds2 {
 	//// CONFIGS
 	private static boolean debug=false;
-	private static float shortTime=.5f;
-	private static float mediumTime=1.2f;
+
 	private static int normalImplicitWait=3;
 	private static String disclaimer="This information is extracted from: https://covidrelief.glideapp.io/, we hold no responsibility on the validity or accuracy of the information\nThis is done only to help peple in urgent needs get instant information";
 	///////////////
-    private static String workflow="Oxygen Availability"; //Oxygen Availability		Vacant Beds Tracker		Ambulance Availability
-	private static String city="Delhi";
-	private static String fileName="Beds"+"_"+workflow+".csv";
+	private static String city="Raipur"; //Delhi  Gurugram
+	private static String workflow="Vacant Beds Tracker";
+    //private static String workflow="Oxygen Availability";		
+    //private static String workflow="Ambulance Availability";
+    ///////////
+	private static float shortTime=.5f;
+	private static float mediumTime=1.2f;
+	private static String fileName=city+"_"+workflow+".csv";
 	static WebDriver driver ;
-	//static String url="https://covidrelief.glideapp.io/dl/ewAiAHQAIgA6ADAALAAiAHMAIgA6ACIAbQBlAG4AdQAtADIAMQBlADcANgA4ADkANwAtAGQANgBiADYALQA0ADQANgAzAC0AOABmAGMAMQAtADcAMwA1ADAAOQAxADgAMABlADgAZgA2AC0AMQBkAGYAOQBmAGUAYgAxAGQANABmAGMAYQAzAGYAZgA4AGYAOAA3ADEAOAA1ADkAMgA1ADIAZABiAGMAZQAwACIALAAiAHIAIgA6ACIAZABIAE4ASQBYAGQAYgB2AFEARgB1AGYALQB4AG0AdgBRAHUATwBjADAAZwAiACwAIgBuACIAOgAiAEQAZQBsAGgAaQAiAH0A";
+	static String bedsDelhiUrl="https://covidrelief.glideapp.io/dl/ewAiAHQAIgA6ADAALAAiAHMAIgA6ACIAbQBlAG4AdQAtADIAMQBlADcANgA4ADkANwAtAGQANgBiADYALQA0ADQANgAzAC0AOABmAGMAMQAtADcAMwA1ADAAOQAxADgAMABlADgAZgA2AC0AMQBkAGYAOQBmAGUAYgAxAGQANABmAGMAYQAzAGYAZgA4AGYAOAA3ADEAOAA1ADkAMgA1ADIAZABiAGMAZQAwACIALAAiAHIAIgA6ACIAZABIAE4ASQBYAGQAYgB2AFEARgB1AGYALQB4AG0AdgBRAHUATwBjADAAZwAiACwAIgBuACIAOgAiAEQAZQBsAGgAaQAiAH0A";
+	/////XPATHS
 	static String url="https://covidrelief.glideapp.io/";
     static String searchBox="//input";
-
     static String mainPageRowElements="//div[@role='cell']";
     static String rowElements="//div[@role='button']";
     static String clickTextXpath="//*[contains(text(),'replaceText')]";
-
-    
     static String hospitalRowElements="//div[@role='row']";
-    //static String hospitalRowElements="//*[@class='ReactVirtualized__Grid__innerScrollContainer']/div";
-  
 	private static String commentsXpath="//div[@data-test='app-comment']";
 	private static String backButton="//button[@data-test='back-button']";
 	private static Set <String> finalRows = new HashSet<String>() ;
 
-	 public static void main(String[] args) throws InterruptedException {
-		 
-		 
-		 	
+	public static void main(String[] args) throws InterruptedException {
 		 	System.out.println("############## STARTING ############## ");
-		 	
-		 	fileName=workflow+(workflow=="Vacant Beds Tracker"?"_"+city:"")+getTimeAppender()+".csv";
-		 	
-		 	
+		 	fileName=workflow+(workflow=="Vacant Beds Tracker"?"_"+city+"":"")+getTimeAppender()+".csv";
 	        System.setProperty("webdriver.gecko.driver", "C://bin//geckodriver.exe");
 	        initialize();
 	        clickByText(workflow);
 	        searchAndOpenCityPage();	//if Wrkflow is for Vacant Beds 
-	        getList() ;
-	        
-//	        driver.findElement(By.xpath(searchBox)).sendKeys(city);
-//	        WebElement cityRow= getRowElement( rowElements,city);
-//	        clickWebElement(cityRow);sleep(mediumTime);
+	        //getList() ;
 	        PrepareFile();
-    	
-    	processRows();
+	        processRows();
     	//fprint(disclaimer);
-        System.out.println("################ END OF PROGRAM ##################");
-        Thread.sleep(20000);
-        driver.close();
+	        System.out.println("################ END OF PROGRAM ##################");
+	        Thread.sleep(20000);
+	        driver.close();
 	}
 
 	 private static void getList() {
@@ -130,7 +119,7 @@ public class ReVampGetCovidBeds2 {
 
 
 	private static void searchAndOpenCityPage() {
-		if(workflow=="Vacant Beds")
+		if(workflow=="Vacant Beds Tracker")
 			serchAndClick(city);
 	}
 
@@ -152,11 +141,6 @@ public class ReVampGetCovidBeds2 {
 
 
 	private static void processRows() {
-		 print("ZOOM OUT and SCROLL DOWN AND UP ");
-		 if(!debug)
-			 sleep(10);
-		 print("CAPTURE ELEMENTS COMPLETED");
-
 		 List<WebElement> hospitalRows= driver.findElements(By.xpath(hospitalRowElements));
 		 String hospital="//div[@class='summary-title']";
 		 String bed="//div[@class='summary-subtitle']";
