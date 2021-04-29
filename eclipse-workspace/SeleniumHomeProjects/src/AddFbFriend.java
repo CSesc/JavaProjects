@@ -42,8 +42,6 @@ public class AddFbFriend {
         	login();
         }
         	
-        	
-        
         
        System.out.println("\nAdding Friends: ");
        for(int j=0;j<50;j++)
@@ -55,7 +53,7 @@ public class AddFbFriend {
        appendStrToFile(logFileName,fullCount+" Friends Added ");
         	
         System.out.println("\n\nFinished Executing\n"+fullCount+" Friends Added ");
-        Thread.sleep(30000);
+        Thread.sleep(20000);
         driver.quit();
 	}
 
