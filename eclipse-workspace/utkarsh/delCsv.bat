@@ -1,1 +1,1 @@
-del *.csv
+del *.csv *.xlsx

@@ -74,12 +74,18 @@ public class SiteScrapper {
 	private static String backButton="//button[@data-test='back-button']";
 	private static Set <String> finalRows = new HashSet<String>() ;
 //,
-	private static String mailingList="nivi306@gmail.com,shubhangna.sinha@gmail.com,xautomation8@gmail.com,smilecosts00@gmail.com,navinpramanik01@gmail.com";
+	private static String mailingList="nivi306@gmail.com,xautomation8@gmail.com,smilecosts00@gmail.com,navinpramanik01@gmail.com";
 
 	public static void main(String[] args) throws InterruptedException {
 		 	System.out.println("############## STARTING ############## ");
+		 	print("Args Length: "+args.length);
 		 	if(args.length>0)
-		 		debug=("FALSE"==args[0].toUpperCase()?false:debug);
+		 		{
+		 		print("Current Debug"+debug);
+		 			debug=(args[0].toUpperCase().contains("FALSE")?false:(args[0].toUpperCase().contains("TRUE")?true:debug));
+		 			print("CLI Args: "+args[0]);
+			 		
+		 		}
 ///////FIRST SITE
 		 	try {///site 1
 	        initialize();
@@ -105,7 +111,7 @@ public class SiteScrapper {
         		"\nCompleted At :\t"+getTimeStamp()+(workflow=="Vacant Beds Tracker"?"\nCity Covered :\t"+city:"")
         		+"\nMailingList : "+mailingList;
         		
-        EmailSender.SendMail(mailingList, ""+workflow+ " Results",mailMessage, excelFileName,excelFileName);		
+        EmailSender.SendMail(mailingList, workflow+ " Results",mailMessage, excelFileName,excelFileName);		
 	}
 	private static void processRows2() {
 		print("ITERATING LIST SIZE:"+finalRows.size());
