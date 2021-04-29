@@ -1,4 +1,4 @@
-package utkarsh;
+package testcases;
 
 import java.awt.AWTException;
 import java.awt.Robot;
@@ -9,7 +9,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -37,13 +36,10 @@ import org.openqa.selenium.io.FileHandler;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
-import entities.HospitalBed;
-import io.github.bonigarcia.wdm.WebDriverManager;
-import utils.AppendExcel;
-import utils.EmailSender;
-import utils.ExcelUtil;
-import utils.DelhiGovCovidSite;
-
+//import io.github.bonigarcia.wdm.WebDriverManager;
+// TODO: Integrate Apache POI
+// TODO: Run With Maven
+// TODO: Run Both IN SEQUENCE
 @SuppressWarnings("unused")
 public class SiteScrapper {
 	//// CONFIGS
@@ -59,8 +55,6 @@ public class SiteScrapper {
 	private static float shortTime=.5f;
 	private static float mediumTime=1.2f;
 	private static String fileName=city+"_"+workflow+".csv";
-	private static String excelFileName=city+"_"+workflow+".csv";
-	
 	static WebDriver driver ;
 	static String bedsDelhiUrl="https://covidrelief.glideapp.io/dl/ewAiAHQAIgA6ADAALAAiAHMAIgA6ACIAbQBlAG4AdQAtADIAMQBlADcANgA4ADkANwAtAGQANgBiADYALQA0ADQANgAzAC0AOABmAGMAMQAtADcAMwA1ADAAOQAxADgAMABlADgAZgA2AC0AMQBkAGYAOQBmAGUAYgAxAGQANABmAGMAYQAzAGYAZgA4AGYAOAA3ADEAOAA1ADkAMgA1ADIAZABiAGMAZQAwACIALAAiAHIAIgA6ACIAZABIAE4ASQBYAGQAYgB2AFEARgB1AGYALQB4AG0AdgBRAHUATwBjADAAZwAiACwAIgBuACIAOgAiAEQAZQBsAGgAaQAiAH0A";
 	/////XPATHS
@@ -78,62 +72,46 @@ public class SiteScrapper {
 
 	public static void main(String[] args) throws InterruptedException {
 		 	System.out.println("############## STARTING ############## ");
-		 	if(args.length>0)
-		 		debug=("TRUE"==args[0].toUpperCase()?true:debug);
-///////FIRST SITE
-		 	try {///site 1
+		 	
 	        initialize();
 	        clickByText(workflow);
 	        searchAndOpenCityPage();	//if Workflow is for Vacant Beds 
 	        getList() ;
  	        PrepareFile();
 	        processRows2();
+    	//	fprint(disclaimer);
+	        System.out.println("################ END OF PROGRAM ##################");
 	        if(debug)Thread.sleep(20000);
 	        driver.close();
-		 	}catch(Exception e) {error("ERROR OCCURED WHILE SCRAPPING SITE 1: "+url);}
-///////SECOND SITE
-		 	try {
-	       // new DelhiGovCovidSite().performRowOperation();
-		 	}
-		 	catch(Exception e) {error("ERROR OCCURED WHILE SCRAPPING SITE 2: Govt Site"+url);}
-		 	
 	        sendEmail();
-	        System.out.println("################ END OF PROGRAM ##################");
 	}
 	private static void sendEmail() {
 		String mailMessage="Current Status for : \nProcesed : "+workflow + 
         		"\nCompleted At :\t"+getTimeStamp()+(workflow=="Vacant Beds Tracker"?"\nCity Covered :\t"+city:"")
         		+"\nMailingList : "+mailingList;
         		
-        EmailSender.SendMail(mailingList, ""+workflow+ " Results",mailMessage, excelFileName,excelFileName);		
+        SendMail(mailingList, ""+workflow+ " Results",mailMessage, fileName,fileName);		
 	}
 	private static void processRows2() {
 		print("ITERATING LIST SIZE:"+finalRows.size());
         int ctr=1;
         Iterator<String> itr = finalRows.iterator(); 
-        List <HospitalBed> HospitalBedz = new ArrayList<HospitalBed>();
         while(itr.hasNext()){
         	  String Content=itr.next();
         	  print(ctr++ +"/"+finalRows.size()+" : "+Content);
     		  serchAndClick(Content);  
-    		  HospitalBedz.add(fetchData(Content));
+    		  fetchData(Content);
         	  clickIfPresent(backButton);
-        		if(debug==true && ctr++>2)
-	         	{	error("\n\nITERATION HAS BEEN DISABLED");
-	         		break;
-	         	}
         	} 
-        AppendExcel.append(excelFileName,HospitalBedz);
-			
+		
 		 }
 	
-	 private static HospitalBed fetchData(String currentSearch) {
+	 private static void fetchData(String currentSearch) {
 		String heading="//div[@class='summary-title']";
 		String subHeading="//div[@class='summary-subtitle']";
 		String generic="//*[@role='button']";
 		String upVoteXpath="//div[@data-test='app-expandable-options']";
 		String detailZ="";
-		String []  finalData=new String[12];
 		if(driver.getTitle().contains(currentSearch))
 		{
 			 List <WebElement> details=driver.findElements(By.xpath(generic));
@@ -145,7 +123,7 @@ public class SiteScrapper {
 			 String dataString=getText(heading)+","+getText(subHeading)+","+detailZ+getText(upVoteXpath);//+","+comments;
 			 dataString=dataString.replace("| Oxygen Beds",",Oxygen Beds");
 			 String [] data=dataString.split(",");
-			 
+			 String []  finalData=new String[9];
 			 finalData[0]=data[0];
 			 
 			 if(data[1].contains("Normal Beds: "))
@@ -161,36 +139,28 @@ public class SiteScrapper {
 				
 				if(value.contains("Normal Beds: "))
 					finalData[3]=value.replace("Normal Beds: ", "").replace("Vacancy | ", "");
-				if(value.contains("Beds") && !(value.contains("Normal Beds") || value.contains("Oxygen Beds")))
-					finalData[3]=value.replace("Beds: ", "").replace("Vacancy |", "");
 				
 				if(value.contains("Oxygen Beds"))
 					finalData[4]=value.replace("Oxygen Beds: ", "");
-			
-				if(value.toUpperCase().contains("ADDRESS"))
-					finalData[5]=value;
+				
+				if(value.contains("Beds") && !(value.contains("Normal Beds") || value.contains("Oxygen Beds")))
+					finalData[3]=value.replace("Beds: ", "").replace("Vacancy |", "");
 				
 				if(value.contains("Found Useful (In Last 1 hr)"))
-					finalData[6]=value.replace("Found Useful (In Last 1 hr) |", "");
+					finalData[5]=value.replace("Found Useful (In Last 1 hr) |", "");
 				if(value.contains("Notes |"))
-					finalData[7]=value.replace("Notes |", "");
+					finalData[6]=value.replace("Notes |", "");
 				if(value.contains("Upvote"))
-					finalData[9]=value.replace("Upvote |", "");
-				
+					finalData[8]=value.replace("Upvote |", "");
 			}
-			 finalData[8]=comments;
-			 finalData[10]="TB";
-			 finalData[11]=getTimeStamp();
+			 finalData[7]=comments;
+			 
 			 for(int i=0;i<finalData.length;i++)
 				 if(finalData[i]==null)
 					 finalData[i]="N/A";
 			 fprint(String.join(",",Arrays.asList(finalData)));
-			 //str="Hospital,Contact,Phone No,Normal Bed,Oxygen Bed,Found Useful(1hr),Notes,Comments,Up Votes,Updated On";
-			 //return(new HospitalBed(hospitalName, contact, phone, normalBeds, oxygenBeds, address, foundUseful, notes, comments, votes, totalBeds, lastUpdateTime));
-			 
 		}
-		return(new HospitalBed(finalData[0],finalData[1],finalData[2],finalData[3],finalData[4], finalData[5],finalData[6], finalData[7],
-				 finalData[8],finalData[9],finalData[10], finalData[11]));
+
 	
 	}
 	private static void getList() {
@@ -199,7 +169,7 @@ public class SiteScrapper {
      	String prevLoop="current";
      	String curentLoop="last";
      	String content="";
-     	//
+     	//error("\n\nWHILE HAS BEEN DISABLED");
      	while(!curentLoop.contentEquals(prevLoop))
 	       {	
 	        	rows = driver.findElements(By.xpath(hospitalRowElements));
@@ -215,11 +185,7 @@ public class SiteScrapper {
 	        	prevLoop=curentLoop;
 	        	curentLoop=content;
 	        	scrollToElement(rows.get(rows.size()-1));sleep(.6);
-	        	
-	         	if(debug==true)
-	         	{	error("\n\nWHILE HAS BEEN DISABLED");
-	         		curentLoop=prevLoop;
-	         	}
+
 	       }
 		
 	}
@@ -274,9 +240,8 @@ public class SiteScrapper {
 		//
 		print("EXECUTION STARTED FOR\nWORKFLOW: "+workflow+"\nCity: "+city+"\nDebug: "+debug);
 		fileName=workflow+(workflow=="Vacant Beds Tracker"?"_"+city+"":"")+getTimeAppender()+".csv";
-		excelFileName=workflow+(workflow=="Vacant Beds Tracker"?"_"+city+"":"")+".xlsx";
-        //System.setProperty("webdriver.gecko.driver", "C://bin//geckodriver.exe");
-        WebDriverManager.firefoxdriver().setup();
+        System.setProperty("webdriver.gecko.driver", "C://bin//drivers//geckodriver.exe");
+        //WebDriverManager.firefoxdriver().setup();
         driver = new FirefoxDriver();
         driver.manage().timeouts().implicitlyWait(normalImplicitWait, TimeUnit.SECONDS);
         driver.manage().window().maximize();
@@ -391,17 +356,15 @@ System.out.println("exception occoured" + e);
 
 public static void fprint( String str) 
 { 	
-if(!debug)
-{
-	try { 
-	BufferedWriter out = new BufferedWriter( 
-	new FileWriter(fileName, true)); 
-	out.write(System.lineSeparator()+""+str); 
-	out.close(); 
-	} 
-	catch (IOException e) { 
-	System.out.println("exception occoured" + e); 
-	}
+	str=str+","+getTimeStamp();
+try { 
+BufferedWriter out = new BufferedWriter( 
+new FileWriter(fileName, true)); 
+out.write(System.lineSeparator()+""+str); 
+out.close(); 
+} 
+catch (IOException e) { 
+System.out.println("exception occoured" + e); 
 }
 }
 	private static void newScreen(String element)
@@ -447,5 +410,33 @@ if(!debug)
 			e.printStackTrace();
 		}
 	}
-	
+	public static void SendMail(String csvToAddress,String subjectLine,String message,String attachmentPath,String AttachmentName){
+		try {
+			System.out.println("############## SENDING EMAIL ##############\nTO :\t\t "+csvToAddress+"\nSubject:\t"+"\nAttachment:\t"+AttachmentName+"\nAttachment File:\t"+attachmentPath);
+			
+			
+			MultiPartEmail email = new MultiPartEmail();
+			email.setHostName("smtp.googlemail.com");
+			email.setSmtpPort(465);
+			email.setAuthenticator(new DefaultAuthenticator("smilecosts00@gmail.com", "Kriti7333"));
+			email.setSSLOnConnect(true);
+			email.setFrom("smilecosts00@gmail.com");
+			email.setSubject(subjectLine);
+			email.setMsg(message);
+			String[] addresses=csvToAddress.split(",");
+			for(int i =0;i<addresses.length;i++)
+				email.addTo(addresses[i]);	
+			EmailAttachment attachment = new EmailAttachment();
+			attachment.setPath(attachmentPath);
+			attachment.setDisposition(EmailAttachment.ATTACHMENT);
+			attachment.setDescription("Picture of John");
+			attachment.setName(AttachmentName);
+			email.attach(attachment);
+			email.send();
+			System.out.println("############## EMAIL SENT ##############");
+		} catch (EmailException e) {
+			// 
+			e.printStackTrace();
+		}
+	}
 }
