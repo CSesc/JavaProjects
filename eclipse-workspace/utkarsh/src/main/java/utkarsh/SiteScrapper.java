@@ -73,13 +73,13 @@ public class SiteScrapper {
 	private static String commentsXpath="//div[@data-test='app-comment']";
 	private static String backButton="//button[@data-test='back-button']";
 	private static Set <String> finalRows = new HashSet<String>() ;
-
-	private static String mailingList="xautomation8@gmail.com,smilecosts00@gmail.com";
+//,
+	private static String mailingList="nivi306@gmail.com,shubhangna.sinha@gmail.com,xautomation8@gmail.com,smilecosts00@gmail.com,navinpramanik01@gmail.com";
 
 	public static void main(String[] args) throws InterruptedException {
 		 	System.out.println("############## STARTING ############## ");
 		 	if(args.length>0)
-		 		debug=("TRUE"==args[0].toUpperCase()?true:debug);
+		 		debug=("FALSE"==args[0].toUpperCase()?false:debug);
 ///////FIRST SITE
 		 	try {///site 1
 	        initialize();
@@ -272,10 +272,12 @@ public class SiteScrapper {
 
 	private static void initialize() {
 		//
+		
 		print("EXECUTION STARTED FOR\nWORKFLOW: "+workflow+"\nCity: "+city+"\nDebug: "+debug);
 		fileName=workflow+(workflow=="Vacant Beds Tracker"?"_"+city+"":"")+getTimeAppender()+".csv";
 		excelFileName=workflow+(workflow=="Vacant Beds Tracker"?"_"+city+"":"")+".xlsx";
-        //System.setProperty("webdriver.gecko.driver", "C://bin//geckodriver.exe");
+		new File(excelFileName).delete();
+		//System.setProperty("webdriver.gecko.driver", "C://bin//geckodriver.exe");
         WebDriverManager.firefoxdriver().setup();
         driver = new FirefoxDriver();
         driver.manage().timeouts().implicitlyWait(normalImplicitWait, TimeUnit.SECONDS);

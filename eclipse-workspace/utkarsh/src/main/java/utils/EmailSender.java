@@ -16,7 +16,7 @@ public class EmailSender {
 			MultiPartEmail email = new MultiPartEmail();
 			email.setHostName("smtp.googlemail.com");
 			email.setSmtpPort(465);
-			email.setAuthenticator(new DefaultAuthenticator("smilecosts00@gmail.com", "Kriti7333"));
+			email.setAuthenticator(new DefaultAuthenticator("smilecosts00@gmail.com", "Rock-pap3r"));
 			email.setSSLOnConnect(true);
 			email.setFrom("smilecosts00@gmail.com");
 			email.setSubject(subjectLine);
