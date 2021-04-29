@@ -5,6 +5,7 @@ import java.io.Writer;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
@@ -21,19 +22,19 @@ public class AddFbFriend {
 	private static String addFriendUrl="https://www.facebook.com/friends/";
 	private static int fullCount=0;
 	public static void main(String[] args) throws InterruptedException {
-        System.setProperty("webdriver.gecko.driver", "C://bin//geckodriver.exe");
-        System.setProperty("webdriver.chrome.driver", "C://bin//chromedriver.exe");
+        System.setProperty("webdriver.gecko.driver", "C://bin//drivers//geckodriver.exe");
+        System.setProperty("webdriver.chrome.driver", "C://bin//drivers//chromedriver.exe");
         
 
       //  driver=new ChromeDriver();
        
 
-        if(true)//args.length>0 && args[0]=="chrome")
+        if(false)//args.length>0 && args[0]=="chrome")
 	        	driver=new ChromeDriver();
         else
         	 	driver=new FirefoxDriver();
     	System.out.println("First Login Attempt");
-    	
+    	driver.manage().timeouts().implicitlyWait(15,TimeUnit.SECONDS);
     	
         if(!login())
         {

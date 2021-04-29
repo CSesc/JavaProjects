@@ -1,3 +1,5 @@
+package utkarsh;
+
 import java.awt.AWTException;
 import java.awt.Robot;
 import java.awt.event.KeyEvent;
@@ -7,12 +9,17 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import org.openqa.selenium.interactions.Actions;
+import org.apache.commons.mail.DefaultAuthenticator;
+import org.apache.commons.mail.EmailAttachment;
+import org.apache.commons.mail.EmailException;
+import org.apache.commons.mail.MultiPartEmail;
 import org.omg.CORBA.TIMEOUT;
 import org.openqa.selenium.By;
 import org.openqa.selenium.JavascriptExecutor;
@@ -29,18 +36,19 @@ import org.openqa.selenium.io.FileHandler;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
+import io.github.bonigarcia.wdm.WebDriverManager;
+
 @SuppressWarnings("unused")
-public class ReVampGetCovidBeds2 {
+public class SiteScrapper {
 	//// CONFIGS
-	private static boolean debug=false;
+	private static boolean debug=true;
 
 	private static int normalImplicitWait=3;
 	private static String disclaimer="This information is extracted from: https://covidrelief.glideapp.io/, we hold no responsibility on the validity or accuracy of the information\nThis is done only to help peple in urgent needs get instant information";
 	///////////////
-	private static String city="Raipur"; //Delhi  Gurugram
+	private static String city="Delhi"; //Delhi  Gurugram Thane
 	private static String workflow="Vacant Beds Tracker";
-    //private static String workflow="Oxygen Availability";		
-    //private static String workflow="Ambulance Availability";
+// 	private static String workflow="Oxygen Availability";		
     ///////////
 	private static float shortTime=.5f;
 	private static float mediumTime=1.2f;
@@ -52,146 +60,193 @@ public class ReVampGetCovidBeds2 {
     static String searchBox="//input";
     static String mainPageRowElements="//div[@role='cell']";
     static String rowElements="//div[@role='button']";
-    static String clickTextXpath="//*[contains(text(),'replaceText')]";
+    static String clickTextXpath="//*[contains(text(),\"replaceText\")]";
     static String hospitalRowElements="//div[@role='row']";
 	private static String commentsXpath="//div[@data-test='app-comment']";
 	private static String backButton="//button[@data-test='back-button']";
 	private static Set <String> finalRows = new HashSet<String>() ;
 
+	private static String mailingList="xautomation8@gmail.com,smilecosts00@gmail.com";
+
 	public static void main(String[] args) throws InterruptedException {
 		 	System.out.println("############## STARTING ############## ");
-		 	fileName=workflow+(workflow=="Vacant Beds Tracker"?"_"+city+"":"")+getTimeAppender()+".csv";
-	        System.setProperty("webdriver.gecko.driver", "C://bin//geckodriver.exe");
+		 	
 	        initialize();
 	        clickByText(workflow);
-	        searchAndOpenCityPage();	//if Wrkflow is for Vacant Beds 
-	        //getList() ;
-	        PrepareFile();
-	        processRows();
-    	//fprint(disclaimer);
+	        searchAndOpenCityPage();	//if Workflow is for Vacant Beds 
+	        getList() ;
+ 	        PrepareFile();
+	        processRows2();
+    	//	fprint(disclaimer);
 	        System.out.println("################ END OF PROGRAM ##################");
-	        Thread.sleep(20000);
+	        if(debug)Thread.sleep(20000);
 	        driver.close();
+	        sendEmail();
 	}
+	private static void sendEmail() {
+		String mailMessage="Current Status for : \nProcesed : "+workflow + 
+        		"\nCompleted At :\t"+getTimeStamp()+(workflow=="Vacant Beds Tracker"?"\nCity Covered :\t"+city:"")
+        		+"\nMailingList : "+mailingList;
+        		
+        SendMail(mailingList, ""+workflow+ " Results",mailMessage, fileName,fileName);		
+	}
+	private static void processRows2() {
+		print("ITERATING LIST SIZE:"+finalRows.size());
+        int ctr=1;
+        Iterator<String> itr = finalRows.iterator(); 
+        while(itr.hasNext()){
+        	  String Content=itr.next();
+        	  print(ctr++ +"/"+finalRows.size()+" : "+Content);
+    		  serchAndClick(Content);  
+    		  fetchData(Content);
+        	  clickIfPresent(backButton);
+        	} 
+		
+		 }
+	
+	 private static void fetchData(String currentSearch) {
+		String heading="//div[@class='summary-title']";
+		String subHeading="//div[@class='summary-subtitle']";
+		String generic="//*[@role='button']";
+		String upVoteXpath="//div[@data-test='app-expandable-options']";
+		String detailZ="";
+		if(driver.getTitle().contains(currentSearch))
+		{
+			 List <WebElement> details=driver.findElements(By.xpath(generic));
+			 for(int x=0;x<details.size();x++)
+				 detailZ=getElementText(details.get(x))+","+detailZ;
+		
+		
+			 String comments=getComments();
+			 String dataString=getText(heading)+","+getText(subHeading)+","+detailZ+getText(upVoteXpath);//+","+comments;
+			 dataString=dataString.replace("| Oxygen Beds",",Oxygen Beds");
+			 String [] data=dataString.split(",");
+			 String []  finalData=new String[9];
+			 finalData[0]=data[0];
+			 
+			 if(data[1].contains("Normal Beds: "))
+					 finalData[3]=data[1].replace("Normal Beds: ",""); // handle beds here
+			 else
+				 finalData[1]=data[1];
+			 
+			 for(int i=2;i<data.length;i++)
+			 {
+				String value=data[i];
+				if(value.contains("Number") || value.contains("Phone") || value.contains("Contact")  )
+					finalData[2]=value.replace("Number | ", "").replace("Phone | ", "").replace("Contact | ", "");
+				
+				if(value.contains("Normal Beds: "))
+					finalData[3]=value.replace("Normal Beds: ", "").replace("Vacancy | ", "");
+				
+				if(value.contains("Oxygen Beds"))
+					finalData[4]=value.replace("Oxygen Beds: ", "");
+				
+				if(value.contains("Beds") && !(value.contains("Normal Beds") || value.contains("Oxygen Beds")))
+					finalData[3]=value.replace("Beds: ", "").replace("Vacancy |", "");
+				
+				if(value.contains("Found Useful (In Last 1 hr)"))
+					finalData[5]=value.replace("Found Useful (In Last 1 hr) |", "");
+				if(value.contains("Notes |"))
+					finalData[6]=value.replace("Notes |", "");
+				if(value.contains("Upvote"))
+					finalData[8]=value.replace("Upvote |", "");
+			}
+			 finalData[7]=comments;
+			 
+			 for(int i=0;i<finalData.length;i++)
+				 if(finalData[i]==null)
+					 finalData[i]="N/A";
+			 fprint(String.join(",",Arrays.asList(finalData)));
+		}
 
-	 private static void getList() {
+	
+	}
+	private static void getList() {
 	        
 	        List<WebElement> rows = driver.findElements(By.xpath(hospitalRowElements));
      	String prevLoop="current";
-     	String curentLoop="last";String content="";
+     	String curentLoop="last";
+     	String content="";
+     	//error("\n\nWHILE HAS BEEN DISABLED");
      	while(!curentLoop.contentEquals(prevLoop))
-	        {	
+	       {	
 	        	rows = driver.findElements(By.xpath(hospitalRowElements));
-	        	for(int j=0;j<rows.size();j++)
+	        	for(int i=0;i<rows.size();i++)
 		        {
-	        		content=rows.get(j).getText().replaceAll("\\r\\n|\\r|\\n", " | ");
-		        	finalRows.add(content);
-		        	print(content);
+	        		content=rows.get(i).getText();
+	        		content=content.replaceAll("\\r\\n|\\r|\\n", " \\| ");
+	        		if(content.contains(" | "))
+	        			content =content.split(" \\| ")[1];
+	        		finalRows.add(content);
 		        	rows = driver.findElements(By.xpath(hospitalRowElements));//refresh
 		        }
 	        	prevLoop=curentLoop;
 	        	curentLoop=content;
-	        	scrollToElement(rows.get(rows.size()-1));sleep(1);
+	        	scrollToElement(rows.get(rows.size()-1));sleep(.6);
 
-	        }
-	        System.out.println("ITERATING SET");
-	        int ctr=1;
-	        Iterator<String> itr = finalRows.iterator(); 
-	        while(itr.hasNext()){
-	        	  print(ctr++ +" : "+itr.next() );
-	        	}
-	        
+	       }
 		
 	}
 		private static void scrollToElement(WebElement webElement) {
-		debug("Scrolling to Element: "+webElement.getText().replaceAll("\\r\\n|\\r|\\n", " | "));
-		 JavascriptExecutor js=(JavascriptExecutor) driver;
-		 js.executeScript("arguments[0].scrollIntoView(true);",webElement);		
-	}
+			debug("Scrolling to Element: "+webElement.getText().replaceAll("\\r\\n|\\r|\\n", " | "));
+			JavascriptExecutor js=(JavascriptExecutor) driver;
+			js.executeScript("arguments[0].scrollIntoView(true);",webElement);		
+	}	
 
 	private static void clickByText(String text) {
-		clickWebElement(driver.findElement(By.xpath(clickTextXpath.replace("replaceText",text))));
+		WebElement element=driver.findElement(By.xpath(clickTextXpath.replace("replaceText",text)));
+		clickWebElement(element);
 		sleep(mediumTime);		
 	}
-
-
-	
-
 
 	private static void searchAndOpenCityPage() {
 		if(workflow=="Vacant Beds Tracker")
 			serchAndClick(city);
 	}
+	private static void serchAndClickRowElement(String text) {
+		driver.findElement(By.xpath(searchBox)).sendKeys(text);
+		clickIfPresent(rowElements);
+
+	}
 
 
-	private static void serchAndClick(String city) {
-		driver.findElement(By.xpath(searchBox)).sendKeys(city);
-		clickByText(city);
-
+	private static void serchAndClick(String text) {
+		WebElement searchBar=driver.findElement(By.xpath(searchBox));
+		searchBar.clear();  sleep(.4);
+		searchBar.sendKeys(text);sleep(1.3);
+		try {clickByText(text);
+  	  }
+  	  catch(Exception e3)
+  	  {
+  		  print("Unable to click List Item: "+text+"Retrying...");
+  		
+  		try {
+			searchBar.clear();  sleep(1);
+			searchBar.sendKeys(text);sleep(1.3);
+			clickByText(text);
+	  	  }
+	  	  catch(Exception e23)
+	  	  {
+	  		  error("Retry to click Failed for List Item: "+text);
+	  	  }
+  	  }
+		
 	}
 
 
 	private static void initialize() {
+		//
+		print("EXECUTION STARTED FOR\nWORKFLOW: "+workflow+"\nCity: "+city+"\nDebug: "+debug);
+		fileName=workflow+(workflow=="Vacant Beds Tracker"?"_"+city+"":"")+getTimeAppender()+".csv";
+        //System.setProperty("webdriver.gecko.driver", "C://bin//geckodriver.exe");
+        WebDriverManager.firefoxdriver().setup();
         driver = new FirefoxDriver();
         driver.manage().timeouts().implicitlyWait(normalImplicitWait, TimeUnit.SECONDS);
         driver.manage().window().maximize();
         driver.get(url); 		
-        zoomOut();
+        //zoomOut();
 	}
 
-
-	private static void processRows() {
-		 List<WebElement> hospitalRows= driver.findElements(By.xpath(hospitalRowElements));
-		 String hospital="//div[@class='summary-title']";
-		 String bed="//div[@class='summary-subtitle']";
-		 String phone="//div[@class='textStyle']";
-		
-		 for(int i =1; i <hospitalRows.size()-1;i++)
-		 {
-			 
-			 hospitalRows= driver.findElements(By.xpath(hospitalRowElements));
-			 WebElement currentElement=hospitalRows.get(i);
-			 if(isClicable(currentElement))
-					 {
-				 		i++;
-				 		//print("City is now:"+currentElement.getText());
-					 }
-			 JavascriptExecutor js = (JavascriptExecutor) driver;
-			 if(i>10)
-				 js.executeScript("arguments[0].scrollIntoView(true);",hospitalRows.get(i-1));
-			 sleep(mediumTime);
-			 js.executeScript("arguments[0].setAttribute('style', 'background: yellow; border: 2px solid red;');", currentElement);
-			 clickWebElement(currentElement);sleep(mediumTime);
-			 print(i+" / "+hospitalRows.size()+"\tprocessing :\t"+getText(hospital));
-			 String commentText=getComments();
-			 String beds=getText(bed);//
-			 if(!city.contentEquals("Raipur") && !city.contentEquals("Pune")  )
-				 beds=beds.replace("Beds: ","");
-			 fprint(getText(hospital)+","+getText(phone)+","+beds+","+commentText);//+","+commentText);
-			 if(!driver.getTitle().contains(workflow))
-				 clickIfPresent(backButton);
-			 sleep(shortTime);
-
-		 }
-		 
-		  
-
-	}
-
-
-
-	private static boolean isClicable(WebElement currentElement) {
-		try {
-		       new WebDriverWait(driver, 100).until(ExpectedConditions.elementToBeClickable(currentElement));
-		       //System.out.println("Element is clickable");
-		       return true;
-		     }
-		catch(TimeoutException e) {
-		     //  System.out.println("Element isn't clickable");
-			return false;
-		    }
-		
-	}
 
 
 	private static String getComments() {
@@ -205,7 +260,7 @@ public class ReVampGetCovidBeds2 {
 		return commentText;
 	}
 
-	private static void sleep(float i) {
+	private static void sleep(double i) {
 		try {int sleep=(int) i;
 			Thread.sleep(sleep*1000);
 		} catch (InterruptedException e) {
@@ -216,8 +271,8 @@ public class ReVampGetCovidBeds2 {
 
 	private static String getText(String xpath) {
 		String finalStr=driver.findElement(By.xpath(xpath)).getText();
-		finalStr=finalStr.replace("Normal Beds: ","");
-		return finalStr.replaceAll(",","-").replaceAll("\\r\\n|\\r|\\n", " | ").replace(" | Oxygen Beds: ",",");	
+		//finalStr=finalStr.replace("Normal Beds: ","");
+		return finalStr.replaceAll(",","-").replaceAll("\\r\\n|\\r|\\n", " | ");//.replace(" | Oxygen Beds: ",",");	
 			}
 	private static String getElementText(WebElement element) {return	element.getText().replaceAll(",","-").replaceAll("\\r\\n|\\r|\\n", " | ");}
 
@@ -245,8 +300,8 @@ public class ReVampGetCovidBeds2 {
 	private static void clickIfPresent(String xp) {
 		 if(isElementPresent(xp))
 		 {
-			 //System.out.println("Clicking Element Now: "+xp);
-			 driver.findElement(By.xpath(xp)).click();;
+			 if(!driver.getTitle().contains(workflow))
+				 driver.findElement(By.xpath(xp)).click();;
 		 }
 		 }
 
@@ -286,15 +341,7 @@ public class ReVampGetCovidBeds2 {
 
 public static void PrepareFile() 
 {String str="";
-	switch(workflow)
-	{
-		case "Vacant Beds Tracker": str="Hospital,Phone,Beds,Comments,Updated Time";
-				if(city.contains("Raipur"))
-					str="Hospital,Normal Bed,Oxygen Bed,Comments,Updated On";break;
-		case "Ambulance Availability": str="Hospital,Location,Phone,Comments,Updated Time";break;
-		case "Oxygen Availability": str="ContactPerson,Phone,Comments,Updated Time";break;
-	}
-	
+str="Hospital,Contact,Phone No,Normal Bed,Oxygen Bed,Found Useful(1hr),Notes,Comments,Up Votes,Updated On";
 
 try { 
 BufferedWriter out = new BufferedWriter( 
@@ -361,6 +408,35 @@ System.out.println("exception occoured" + e);
 			robot.keyRelease(KeyEvent.VK_CONTROL);
 		}		
 		} catch (AWTException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	public static void SendMail(String csvToAddress,String subjectLine,String message,String attachmentPath,String AttachmentName){
+		try {
+			System.out.println("############## SENDING EMAIL ##############\nTO :\t\t "+csvToAddress+"\nSubject:\t"+"\nAttachment:\t"+AttachmentName+"\nAttachment File:\t"+attachmentPath);
+			
+			
+			MultiPartEmail email = new MultiPartEmail();
+			email.setHostName("smtp.googlemail.com");
+			email.setSmtpPort(465);
+			email.setAuthenticator(new DefaultAuthenticator("smilecosts00@gmail.com", "Kriti7333"));
+			email.setSSLOnConnect(true);
+			email.setFrom("smilecosts00@gmail.com");
+			email.setSubject(subjectLine);
+			email.setMsg(message);
+			String[] addresses=csvToAddress.split(",");
+			for(int i =0;i<addresses.length;i++)
+				email.addTo(addresses[i]);	
+			EmailAttachment attachment = new EmailAttachment();
+			attachment.setPath(attachmentPath);
+			attachment.setDisposition(EmailAttachment.ATTACHMENT);
+			attachment.setDescription("Picture of John");
+			attachment.setName(AttachmentName);
+			email.attach(attachment);
+			email.send();
+			System.out.println("############## EMAIL SENT ##############");
+		} catch (EmailException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
