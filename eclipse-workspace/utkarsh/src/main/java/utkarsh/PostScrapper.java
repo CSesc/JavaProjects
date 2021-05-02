@@ -45,16 +45,10 @@ import utils.ExcelUtil;
 import utils.DelhiGovCovidSite;
 
 @SuppressWarnings("unused")
-public class SiteScrapper {
+public class PostScrapper {
 	//// CONFIGS
-	public static boolean debug=true;
+	private static boolean debug=true;
 
-	public static boolean isDebug() {
-		return debug;
-	}
-	public static void setDebug(boolean debug) {
-		SiteScrapper.debug = debug;
-	}
 	private static int normalImplicitWait=3;
 	private static String disclaimer="This information is extracted from: https://covidrelief.glideapp.io/, we hold no responsibility on the validity or accuracy of the information\nThis is done only to help peple in urgent needs get instant information";
 	///////////////
@@ -84,35 +78,52 @@ public class SiteScrapper {
 
 	public static void main(String[] args) throws InterruptedException {
 		 	System.out.println("############## STARTING ############## ");
+		 	print("Args Length: "+args.length);
+		 	if(args.length>0)
+		 		{
+		 		print("Current Debug"+debug);
+		 			debug=(args[0].toUpperCase().contains("FALSE")?false:(args[0].toUpperCase().contains("TRUE")?true:debug));
+		 			print("CLI Args: "+args[0]);
+			 		
+		 		}
 		 	
-		 	//System.out.println("ARGS: "+ args.length);
-		 	handleArgs(args);
 ///////FIRST SITE
 		 	try {///site 1
-		 	GetBedsInfo();
-		 	}catch(Exception e) {error("ERROR OCCURED WHILE SCRAPPING SITE 1: "+url);e.printStackTrace();newScreen("FAILURE");}
-///////SECOND SITE
-		 	try {
-		 		System.out.println("BEFORE SITE 2 ########## : "+ excelFileName+"");
-		 		if(city.contentEquals("Delhi"))
-;		 			AppendExcel.writeFile(excelFileName,new DelhiGovCovidSite().performRowOperation(),true);
-		 	}
-		 	catch(Exception e) {error("ERROR OCCURED WHILE SCRAPPING SITE 2: Govt Site"+url);}
-	        //sendEmail();
+		 		GetOxygenInfo();
+		 	}catch(Exception e) {error("\nERROR OCCURED WHILE SCRAPPING SITE 1: "+url);
+		 	e.printStackTrace();}
+
+	       // sendEmail();
 	        System.out.println("################ END OF PROGRAM ##################");
 	}
-
-	private static void GetBedsInfo() {
-		  initialize();
+	private static void GetOxygenInfo() {
+		  
+		  	workflow="Live Oxygen Leads";
+			initialize();
 	        clickByText(workflow);
 	        searchAndOpenCityPage();	//if Workflow is for Vacant Beds 
-	        getList() ;
+	        sleep(7);
+	        acceptDisclaimer();
+	       // getList() ;
 	        PrepareFile();
-	        processRows2();
-	        
+	        processPosts();
 	        if(debug)sleep(10);
-	        
 	        driver.close();		
+	}
+	
+	private static void acceptDisclaimer() {
+		driver.switchTo().alert().dismiss();
+driver.findElement(By.xpath("//button[contains(text(),'Understand')]")).click();		
+	}
+	private static void processPosts() {
+//
+		String listItemXpath="\\[@role=listitem]'";
+		List<WebElement> elements=driver.findElements(By.xpath(listItemXpath));
+		for(WebElement element : elements )
+		{
+			print(element.getText());
+		}
+		
 	}
 	private static void sendEmail() {
 		String mailMessage="Current Status for : \nProcesed : "+workflow + 
@@ -132,7 +143,7 @@ public class SiteScrapper {
     		  serchAndClick(Content);  
     		  HospitalBedz.add(fetchData(Content));
         	  clickIfPresent(backButton);
-        		if(debug==true && ctr>2)
+        		if(debug==true && ctr++>2)
 	         	{	error("\n\nITERATION HAS BEEN DISABLED");
 	         		break;
 	         	}
@@ -157,15 +168,13 @@ public class SiteScrapper {
 		
 			 String comments=getComments();
 			 String dataString=getText(heading)+","+getText(subHeading)+","+detailZ+getText(upVoteXpath);//+","+comments;
-			 dataString=dataString.replace("| Oxygen",",Oxygen");
-			 
-			 debug("DATA STRING: "+dataString);
+			 dataString=dataString.replace("| Oxygen Beds",",Oxygen Beds");
 			 String [] data=dataString.split(",");
 			 
 			 finalData[0]=data[0];
 			 
-			 if(data[1].contains("Normal"))
-					 finalData[3]=data[1].replace("Normal Beds: ","").replace("Normal", ""); // handle beds here
+			 if(data[1].contains("Normal Beds: "))
+					 finalData[3]=data[1].replace("Normal Beds: ",""); // handle beds here
 			 else
 				 finalData[1]=data[1];
 			 
@@ -175,14 +184,13 @@ public class SiteScrapper {
 				if(value.contains("Number") || value.contains("Phone") || value.contains("Contact")  )
 					finalData[2]=value.replace("Number | ", "").replace("Phone | ", "").replace("Contact | ", "");
 				
-				if(value.contains("Normal"))
-					finalData[3]=value.replace("Normal Beds: ", "").replace("Normal: ","").replace("Vacancy | ", "");
-				
-				if(value.contains("Beds") && !(value.contains("Normal") || value.contains("Oxygen")))
+				if(value.contains("Normal Beds: "))
+					finalData[3]=value.replace("Normal Beds: ", "").replace("Vacancy | ", "");
+				if(value.contains("Beds") && !(value.contains("Normal Beds") || value.contains("Oxygen Beds")))
 					finalData[3]=value.replace("Beds: ", "").replace("Vacancy |", "");
 				
-				if(value.contains("Oxygen"))
-					finalData[4]=value.replace("Oxygen Beds: ", "").replace("Oxygen: ", "");
+				if(value.contains("Oxygen Beds"))
+					finalData[4]=value.replace("Oxygen Beds: ", "");
 			
 				if(value.toUpperCase().contains("ADDRESS"))
 					finalData[5]=value;
@@ -193,6 +201,7 @@ public class SiteScrapper {
 					finalData[7]=value.replace("Notes |", "");
 				if(value.contains("Upvote"))
 					finalData[9]=value.replace("Upvote |", "");
+				
 			}
 			 finalData[8]=comments;
 			 finalData[10]="TB";
@@ -252,8 +261,8 @@ public class SiteScrapper {
 	}
 
 	private static void searchAndOpenCityPage() {
-		print("Opening CITY Page: "+ city);
-		serchAndClick(city);
+		if(workflow=="Vacant Beds Tracker" || workflow=="Live Oxygen Leads")
+			serchAndClick(city);
 	}
 	private static void serchAndClickRowElement(String text) {
 		driver.findElement(By.xpath(searchBox)).sendKeys(text);
@@ -280,7 +289,7 @@ public class SiteScrapper {
 	  	  catch(Exception e23)
 	  	  {
 	  		  error("Retry to click Failed for List Item: "+text);
-	  	  }sleep(.6);
+	  	  }
   	  }
 		
 	}
@@ -291,8 +300,8 @@ public class SiteScrapper {
 		
 		print("EXECUTION STARTED FOR\nWORKFLOW: "+workflow+"\nCity: "+city+"\nDebug: "+debug);
 		fileName=workflow+(workflow=="Vacant Beds Tracker"?"_"+city+"":"")+getTimeAppender()+".csv";
-		//excelFileName="C:\\Users\\mod-X\\Google Drive\\COVID_INFO\\"+workflow+(workflow=="Vacant Beds Tracker"?"_"+city+"":"")+".xlsx";
-		//new File(excelFileName).delete();
+		excelFileName="C:\\Users\\mod-X\\Google Drive\\COVID_INFO\\"+workflow+(workflow=="Vacant Beds Tracker"?"_"+city+"":"")+".xlsx";
+		new File(excelFileName).delete();
 		//System.setProperty("webdriver.gecko.driver", "C://bin//geckodriver.exe");
         WebDriverManager.firefoxdriver().setup();
         driver = new FirefoxDriver();
@@ -409,7 +418,9 @@ System.out.println("exception occoured" + e);
 
 public static void fprint( String str) 
 { 	
-try { 
+if(!debug)
+{
+	try { 
 	BufferedWriter out = new BufferedWriter( 
 	new FileWriter(fileName, true)); 
 	out.write(System.lineSeparator()+""+str); 
@@ -418,17 +429,15 @@ try {
 	catch (IOException e) { 
 	System.out.println("exception occoured" + e); 
 	}
-
+}
 }
 	private static void newScreen(String element)
 	{
 		try {
 		TakesScreenshot scrShot =((TakesScreenshot)driver);
 		File SrcFile=scrShot.getScreenshotAs(OutputType.FILE);
-		String outDir="ScreenShots";
+		String outDir="C://REPO//ScreenShots//BigBasket";
 		String fName=outDir + "//"+element +"_" + (new java.sql.Timestamp(System.currentTimeMillis())).toString().replaceAll(":","-").replaceAll(" ","_") + ".png";
-		print("Taking ScreenShot: " +fName);
-				
 		File DestFile= new File(fName);
 		FileHandler.copy(SrcFile, DestFile);
 		} catch (IOException e) {
@@ -465,30 +474,5 @@ try {
 			e.printStackTrace();
 		}
 	}
-	private static void handleArgs(String[] args) {
-		if(args.length>0)
- 		{print("RECEIVED SYSTEM ARGS: "+args.length+"\n-----------------------");
-			for(String arguements : args)
-			{
-			String []arguement=arguements.split(",");
- 			for(String arg :arguement)
- 			{
- 				if(arg.contains("="))
- 					{
- 				//print("Contains");
- 						String key=arg.split("=")[0];
- 						String value=arg.split("=")[1];
- 						print (key + "  : "+ value);
- 						if(key.toUpperCase().contentEquals("DEBUG"))debug=Boolean.parseBoolean(value);
- 						if(key.toUpperCase().contentEquals("WORKFLOW"))workflow=value;
- 						if(key.toUpperCase().contentEquals("CITY"))city=value;
- 					}
- 				else
- 					error(arg + " is in incorrect format");
- 				
- 			}
-			}
- 		}
-		excelFileName="C:\\Users\\mod-X\\Google Drive\\COVID_INFO\\"+city+"_"+workflow+".csv";
-	}	
+	
 }

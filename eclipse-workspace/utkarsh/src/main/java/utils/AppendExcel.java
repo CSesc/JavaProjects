@@ -20,13 +20,17 @@ import entities.HospitalBed;
 public class AppendExcel {
     static String[] header = {"Hospital","Contact","Phone No","Normal Bed","Oxygen Bed","Address","Found Useful(1hr)","Notes","Comments","Up Votes","Total Beds","Updated On"};
 
-	public static void append(String fileName,List<HospitalBed> beds){
-		 if(new File(fileName).exists())
+	public static void writeFile(String fileName,List<HospitalBed> beds,boolean append){
+		System.out.println("CHECKING FILE: "+fileName);
+		 if(new File(fileName).exists() )
         {
         	System.out.println("EXCEL Exists: "+fileName);
+        	 if(append==false)
+    			 createExcel(fileName, beds);
         }
-		 else
+		 else 
 			 createExcel(fileName, beds);
+		
          try
 		   {
 		       FileInputStream myxls = new FileInputStream(fileName);
@@ -61,7 +65,7 @@ public class AppendExcel {
 		       //write changes
 		       studentsSheet.write(output_file);
 		       output_file.close();
-		       System.out.println(" is successfully written");
+		       System.out.println("WRITING DATA COMPLETD: "+fileName);
 		    }
 		    catch(Exception e)
 		    {

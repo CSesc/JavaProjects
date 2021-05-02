@@ -2,6 +2,7 @@ package utils;
 
 import entities.HospitalBed;
 import io.github.bonigarcia.wdm.WebDriverManager;
+import utkarsh.SiteScrapper;
 
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
@@ -45,12 +46,20 @@ public class DelhiGovCovidSite {
         return hospitalList.size();
     }
 
-    public void performRowOperation(){
+    public List<HospitalBed> performRowOperation(){
     	driver.get(url);
         List<HospitalBed> bedList = new ArrayList<HospitalBed>();
         int hosNameRow=1;
         int addressRow = 2;
-        for(int i = 1;i<=hospitalList.size()/2;i++){
+        int loopSize=3;
+        if(SiteScrapper.debug==false)
+        	{
+        		System.out.println("Loop Disabled");
+        		loopSize=hospitalList.size()/2;
+        		      	
+        	}
+        
+        for(int i = 1;i<=loopSize;i++){
 
             System.out.println("*********************************");
 
@@ -86,7 +95,8 @@ public class DelhiGovCovidSite {
             
         }
         driver.quit();
-        AppendExcel.append("Vacant Beds Tracker_Delhi.xlsx",bedList);
+        return bedList;
+        
 
     }
 }
