@@ -11,4 +11,11 @@
 <fullyQualifiedTypeName name="java.lang.Thread"/>
 <fullyQualifiedTypeName name="HelloWorld"/>
 <fullyQualifiedTypeName name="org.openqa.selenium.WebElement"/>
+<fullyQualifiedTypeName name="utkarsh.SiteScrapper"/>
+<fullyQualifiedTypeName name="java.lang.Error"/>
+<fullyQualifiedTypeName name="utils.AppendExcel"/>
+<fullyQualifiedTypeName name="utils.DelhiGovCovidSite"/>
+<fullyQualifiedTypeName name="java.util.ArrayList"/>
+<fullyQualifiedTypeName name="java.util.List"/>
+<fullyQualifiedTypeName name="entities.HospitalBed"/>
 </qualifiedTypeNameHistroy>

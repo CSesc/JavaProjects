@@ -41,7 +41,6 @@ import entities.HospitalBed;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import utils.AppendExcel;
 import utils.EmailSender;
-import utils.ExcelUtil;
 import utils.DelhiGovCovidSite;
 
 @SuppressWarnings("unused")
@@ -148,7 +147,7 @@ driver.findElement(By.xpath("//button[contains(text(),'Understand')]")).click();
 	         		break;
 	         	}
         	} 
-        AppendExcel.writeFile(excelFileName,HospitalBedz,false);
+     //   AppendExcel.writeFile(excelFileName,HospitalBedz,false);
 			
 		 }
 	

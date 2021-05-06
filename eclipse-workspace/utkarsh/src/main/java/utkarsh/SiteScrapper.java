@@ -41,32 +41,36 @@ import entities.HospitalBed;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import utils.AppendExcel;
 import utils.EmailSender;
-import utils.ExcelUtil;
+import utils.GuruGramCovidSite;
+import utils.WebUtils;
 import utils.DelhiGovCovidSite;
 
 @SuppressWarnings("unused")
 public class SiteScrapper {
 	//// CONFIGS
+	
+	private static String city="Pune"; 
 	public static boolean debug=true;
-
-	public static boolean isDebug() {
+	public static boolean isdebug() {
 		return debug;
 	}
-	public static void setDebug(boolean debug) {
+	public static void setdebug(boolean debug) {
 		SiteScrapper.debug = debug;
 	}
-	private static int normalImplicitWait=3;
+	private static int normalImplicitWait=5;
+	private static int longImplicitWait=15; //seconds
+
 	private static String disclaimer="This information is extracted from: https://covidrelief.glideapp.io/, we hold no responsibility on the validity or accuracy of the information\nThis is done only to help peple in urgent needs get instant information";
 	///////////////
-	private static String city="Delhi"; //Delhi  Gurugram Thane
 	private static String workflow="Vacant Beds Tracker";
 // 	private static String workflow="Oxygen Availability";		
     ///////////
 	private static float shortTime=.5f;
 	private static float mediumTime=1.2f;
 	private static String fileName=city+"_"+workflow+".csv";
-	private static String excelFileName="C:\\Users\\mod-X\\Google Drive\\COVID_INFO\\"+city+"_"+workflow+".csv";
-	
+	private static String baseFileLocation="C:\\Users\\mod-X\\Google Drive\\COVID_INFO\\";
+	private static String excelFileName=baseFileLocation+city+"_"+workflow+".xlsx";
+	static boolean runAll=true;
 	static WebDriver driver ;
 	static String bedsDelhiUrl="https://covidrelief.glideapp.io/dl/ewAiAHQAIgA6ADAALAAiAHMAIgA6ACIAbQBlAG4AdQAtADIAMQBlADcANgA4ADkANwAtAGQANgBiADYALQA0ADQANgAzAC0AOABmAGMAMQAtADcAMwA1ADAAOQAxADgAMABlADgAZgA2AC0AMQBkAGYAOQBmAGUAYgAxAGQANABmAGMAYQAzAGYAZgA4AGYAOAA3ADEAOAA1ADkAMgA1ADIAZABiAGMAZQAwACIALAAiAHIAIgA6ACIAZABIAE4ASQBYAGQAYgB2AFEARgB1AGYALQB4AG0AdgBRAHUATwBjADAAZwAiACwAIgBuACIAOgAiAEQAZQBsAGgAaQAiAH0A";
 	/////XPATHS
@@ -87,57 +91,62 @@ public class SiteScrapper {
 		 	
 		 	//System.out.println("ARGS: "+ args.length);
 		 	handleArgs(args);
-///////FIRST SITE
-		 	try {///site 1
-		 	GetBedsInfo();
-		 	}catch(Exception e) {error("ERROR OCCURED WHILE SCRAPPING SITE 1: "+url);e.printStackTrace();newScreen("FAILURE");}
-///////SECOND SITE
-		 	try {
-		 		System.out.println("BEFORE SITE 2 ########## : "+ excelFileName+"");
-		 		if(city.contentEquals("Delhi"))
-;		 			AppendExcel.writeFile(excelFileName,new DelhiGovCovidSite().performRowOperation(),true);
-		 	}
-		 	catch(Exception e) {error("ERROR OCCURED WHILE SCRAPPING SITE 2: Govt Site"+url);}
-	        //sendEmail();
+///////GURUGRAM
+		 	if(city.contentEquals("Gurugram")||runAll)
+	 			{excelFileName=baseFileLocation+"Gurugram_"+workflow+".xlsx";
+		 		String[] guruHeader = {"Hospital","HelpLine","Phone No","Normal Bed","Oxygen Bed","ICU Beds","Ventilator Beds","Notes","Comments","Up Votes","Total Beds","Updated On"};
+			 	 int [] hideGuruHeader= {7,8,9,10};
+			 	 try{AppendExcel.writeFile(excelFileName,guruHeader,hideGuruHeader,new GuruGramCovidSite().performRowOperation(),false);}catch(Exception e) {WebUtils.error("ERROR OCCURED WHILE SCRAPPING SITE 2: Govt Site");WebUtils.newScreen("GURUGRAM_FAILURE",driver);}
+	 			}
+///////DELHI
+		 		if(city.contentEquals("Delhi")||runAll)
+		 			{	excelFileName=baseFileLocation+"Delhi_"+workflow+".xlsx";
+		 				System.out.println("SITE 2 FOR DELHI ########## : "+ excelFileName+"");
+			            String[] header = {"Hospital","Contact","Phone No","Normal Bed","Oxygen Bed","Address","Found Useful(1hr)","Notes","Comments","Up Votes","Total Beds","Updated On"};
+			            int [] hideHeader= {7,8,9};
+			            try {AppendExcel.writeFile(excelFileName,header,hideHeader,new DelhiGovCovidSite().performRowOperation(),true);}catch(Exception e) {WebUtils.error("ERROR OCCURED WHILE SCRAPPING SITE 2: Govt Site");WebUtils.newScreen("DELHI_FAILURE",driver);}
+		 			}
+/////// GENERIC 
+		 		try {///site 1
+		 			excelFileName=baseFileLocation+city+"_"+workflow+".xlsx";
+			 		GetBedsInfo();
+		 		}catch(Exception e) {WebUtils.error("ERROR OCCURED WHILE SCRAPPING SITE 1: "+url);e.printStackTrace();WebUtils.newScreen(city+"_FAILURE",driver);}
 	        System.out.println("################ END OF PROGRAM ##################");
 	}
 
 	private static void GetBedsInfo() {
-		  initialize();
+		  	initialize();
 	        clickByText(workflow);
 	        searchAndOpenCityPage();	//if Workflow is for Vacant Beds 
 	        getList() ;
 	        PrepareFile();
 	        processRows2();
 	        
-	        if(debug)sleep(10);
+	        if(debug)WebUtils.sleep(10);
 	        
 	        driver.close();		
 	}
-	private static void sendEmail() {
-		String mailMessage="Current Status for : \nProcesed : "+workflow + 
-        		"\nCompleted At :\t"+getTimeStamp()+(workflow=="Vacant Beds Tracker"?"\nCity Covered :\t"+city:"")
-        		+"\nMailingList : "+mailingList;
-        		
-        EmailSender.SendMail(mailingList, workflow+ " Results",mailMessage, excelFileName,excelFileName);		
-	}
+	
 	private static void processRows2() {
-		print("ITERATING LIST SIZE:"+finalRows.size());
+		WebUtils.print("ITERATING LIST SIZE:"+finalRows.size());
         int ctr=1;
         Iterator<String> itr = finalRows.iterator(); 
         List <HospitalBed> HospitalBedz = new ArrayList<HospitalBed>();
         while(itr.hasNext()){
         	  String Content=itr.next();
-        	  print(ctr++ +"/"+finalRows.size()+" : "+Content);
-    		  serchAndClick(Content);  
+        	  WebUtils.print(ctr++ +"/"+finalRows.size()+" : "+Content);
+    		  serchAndClick(Content);
+    		  
     		  HospitalBedz.add(fetchData(Content));
-        	  clickIfPresent(backButton);
+        	  clickIfPresent(backButton,driver);
         		if(debug==true && ctr>2)
-	         	{	error("\n\nITERATION HAS BEEN DISABLED");
+	         	{	WebUtils.error("\n\nITERATION HAS BEEN DISABLED");
 	         		break;
 	         	}
         	} 
-        AppendExcel.writeFile(excelFileName,HospitalBedz,false);
+        int [] hideHeader= {7,8,9,10};
+        String[] header = {"Hospital","Contact","Phone No","Normal Bed","Oxygen Bed","Address","Found Useful(1hr)","Notes","Comments","Up Votes","Total Beds","Updated On"};
+        AppendExcel.writeFile(excelFileName,header,hideHeader,HospitalBedz,false);
 			
 		 }
 	
@@ -159,13 +168,15 @@ public class SiteScrapper {
 			 String dataString=getText(heading)+","+getText(subHeading)+","+detailZ+getText(upVoteXpath);//+","+comments;
 			 dataString=dataString.replace("| Oxygen",",Oxygen");
 			 
-			 debug("DATA STRING: "+dataString);
+			 WebUtils.debug("Size: "+ dataString.split(",").length+" - DATA STRING: "+dataString);
 			 String [] data=dataString.split(",");
 			 
 			 finalData[0]=data[0];
 			 
-			 if(data[1].contains("Normal"))
-					 finalData[3]=data[1].replace("Normal Beds: ","").replace("Normal", ""); // handle beds here
+			 if(data[1].contains("Normal")) {
+				 finalData[3]=data[1].replace("Normal Beds: ","").replace("Normal: ", ""); // handle beds here 
+				 //WebUtils.debug("Found Beds: "+data[1]+" FINAL: "+finalData[3]);
+			 }
 			 else
 				 finalData[1]=data[1];
 			 
@@ -196,13 +207,11 @@ public class SiteScrapper {
 			}
 			 finalData[8]=comments;
 			 finalData[10]="TB";
-			 finalData[11]=getTimeStamp();
+			 finalData[11]=WebUtils.getTimeStamp();
 			 for(int i=0;i<finalData.length;i++)
 				 if(finalData[i]==null)
 					 finalData[i]="N/A";
 			 fprint(String.join(",",Arrays.asList(finalData)));
-			 //str="Hospital,Contact,Phone No,Normal Bed,Oxygen Bed,Found Useful(1hr),Notes,Comments,Up Votes,Updated On";
-			 //return(new HospitalBed(hospitalName, contact, phone, normalBeds, oxygenBeds, address, foundUseful, notes, comments, votes, totalBeds, lastUpdateTime));
 			 
 		}
 		return(new HospitalBed(finalData[0],finalData[1],finalData[2],finalData[3],finalData[4], finalData[5],finalData[6], finalData[7],
@@ -230,57 +239,59 @@ public class SiteScrapper {
 		        }
 	        	prevLoop=curentLoop;
 	        	curentLoop=content;
-	        	scrollToElement(rows.get(rows.size()-1));sleep(.6);
+	        	WebUtils.scrollToElement(rows.get(rows.size()-1),driver);WebUtils.sleep(.6);
 	        	
 	         	if(debug==true)
-	         	{	error("\n\nWHILE HAS BEEN DISABLED");
+	         	{	WebUtils.error("\n\nWHILE HAS BEEN DISABLED");
 	         		curentLoop=prevLoop;
 	         	}
 	       }
 		
 	}
-		private static void scrollToElement(WebElement webElement) {
-			debug("Scrolling to Element: "+webElement.getText().replaceAll("\\r\\n|\\r|\\n", " | "));
-			JavascriptExecutor js=(JavascriptExecutor) driver;
-			js.executeScript("arguments[0].scrollIntoView(true);",webElement);		
-	}	
+
 
 	private static void clickByText(String text) {
 		WebElement element=driver.findElement(By.xpath(clickTextXpath.replace("replaceText",text)));
 		clickWebElement(element);
-		sleep(mediumTime);		
+		WebUtils.sleep(mediumTime);		
 	}
 
 	private static void searchAndOpenCityPage() {
-		print("Opening CITY Page: "+ city);
+		WebUtils.print("Opening CITY Page: "+ city);
 		serchAndClick(city);
 	}
 	private static void serchAndClickRowElement(String text) {
 		driver.findElement(By.xpath(searchBox)).sendKeys(text);
-		clickIfPresent(rowElements);
+		clickIfPresent(rowElements,driver);
 
 	}
 
-
+	private static void clickIfPresent(String xp,WebDriver driver) {
+		 if(WebUtils.isElementPresent(xp,driver))
+		 {
+			 if(!driver.getTitle().contains(workflow))
+				 driver.findElement(By.xpath(xp)).click();;
+		 }
+		 }
 	private static void serchAndClick(String text) {
 		WebElement searchBar=driver.findElement(By.xpath(searchBox));
-		searchBar.clear();  sleep(.4);
-		searchBar.sendKeys(text);sleep(1.3);
+		searchBar.clear();  WebUtils.sleep(.4);
+		searchBar.sendKeys(text);WebUtils.sleep(1.3);
 		try {clickByText(text);
   	  }
   	  catch(Exception e3)
   	  {
-  		  print("Unable to click List Item: "+text+"Retrying...");
+  		  WebUtils.print("Unable to click List Item: "+text+"Retrying...");
   		
   		try {
-			searchBar.clear();  sleep(1);
-			searchBar.sendKeys(text);sleep(1.3);
+			searchBar.clear();  WebUtils.sleep(1);
+			searchBar.sendKeys(text);WebUtils.sleep(1.3);
 			clickByText(text);
 	  	  }
 	  	  catch(Exception e23)
 	  	  {
-	  		  error("Retry to click Failed for List Item: "+text);
-	  	  }sleep(.6);
+	  		  WebUtils.error("Retry to click Failed for List Item: "+text);
+	  	  }WebUtils.sleep(.6);
   	  }
 		
 	}
@@ -289,14 +300,14 @@ public class SiteScrapper {
 	private static void initialize() {
 		//
 		
-		print("EXECUTION STARTED FOR\nWORKFLOW: "+workflow+"\nCity: "+city+"\nDebug: "+debug);
-		fileName=workflow+(workflow=="Vacant Beds Tracker"?"_"+city+"":"")+getTimeAppender()+".csv";
+		WebUtils.print("EXECUTION STARTED FOR\nWORKFLOW: "+workflow+"\nCity: "+city+"\nDebug: "+debug);
+		fileName=workflow+(workflow=="Vacant Beds Tracker"?"_"+city+"":"")+WebUtils.getTimeAppender()+".csv";
 		//excelFileName="C:\\Users\\mod-X\\Google Drive\\COVID_INFO\\"+workflow+(workflow=="Vacant Beds Tracker"?"_"+city+"":"")+".xlsx";
 		//new File(excelFileName).delete();
 		//System.setProperty("webdriver.gecko.driver", "C://bin//geckodriver.exe");
         WebDriverManager.firefoxdriver().setup();
         driver = new FirefoxDriver();
-        driver.manage().timeouts().implicitlyWait(normalImplicitWait, TimeUnit.SECONDS);
+        driver.manage().timeouts().implicitlyWait(longImplicitWait, TimeUnit.SECONDS);
         driver.manage().window().maximize();
         driver.get(url); 		
         //zoomOut();
@@ -315,13 +326,6 @@ public class SiteScrapper {
 		return commentText;
 	}
 
-	private static void sleep(double i) {
-		try {int sleep=(int) i;
-			Thread.sleep(sleep*1000);
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}		
-	}
 
 	private static String getText(String xpath) {
 		String finalStr=driver.findElement(By.xpath(xpath)).getText();
@@ -340,10 +344,10 @@ public class SiteScrapper {
 		 List<WebElement> rows=driver.findElements(By.xpath(rowsXpath));
 	        for(int i = 0; i <rows.size(); i ++)
 	        {
-	        	debug("Row "+i + " : "+rows.get(i).getText());
+	        	WebUtils.debug("Row "+i + " : "+rows.get(i).getText());
 	        	if(rows.get(i).getText().contains(Text))
 	        	{
-	        		print("Row "+i + " : "+rows.get(i).getText());
+	        		WebUtils.print("Row "+i + " : "+rows.get(i).getText());
 	        		return rows.get(i);
 	        	}
 	        	
@@ -351,20 +355,9 @@ public class SiteScrapper {
 	        }
 			return null;		
 	}
-	private static void clickIfPresent(String xp) {
-		 if(isElementPresent(xp))
-		 {
-			 if(!driver.getTitle().contains(workflow))
-				 driver.findElement(By.xpath(xp)).click();;
-		 }
-		 }
 
-	private static void print(String message) {System.out.println("INFO: "+message);}
-	private static void debug(String message) {if(debug==true)System.out.println("DEBUG: "+message);}
-	private static void error(String message) {System.err.println("ERROR: "+message);}
 
-	
-	
+
 	
 	private static String getElementText(String element) {
 		String txt="404_NOT_FOUND";
@@ -377,21 +370,7 @@ public class SiteScrapper {
 			}
 		return txt;
 }
-
-	private static Boolean isElementPresent( String xpath) {
-		Boolean elementFound=false;
-		try {
-				driver.findElement(By.xpath(xpath)).isDisplayed();
-				driver.findElement(By.xpath(xpath)).isEnabled();
-				elementFound=true;
-		}
-		catch(Exception e)
-			{
-				elementFound=false;
-				e.printStackTrace();
-			}
-		return elementFound;
-	}
+	
 
 public static void PrepareFile() 
 {String str="";
@@ -420,54 +399,12 @@ try {
 	}
 
 }
-	private static void newScreen(String element)
-	{
-		try {
-		TakesScreenshot scrShot =((TakesScreenshot)driver);
-		File SrcFile=scrShot.getScreenshotAs(OutputType.FILE);
-		String outDir="ScreenShots";
-		String fName=outDir + "//"+element +"_" + (new java.sql.Timestamp(System.currentTimeMillis())).toString().replaceAll(":","-").replaceAll(" ","_") + ".png";
-		print("Taking ScreenShot: " +fName);
-				
-		File DestFile= new File(fName);
-		FileHandler.copy(SrcFile, DestFile);
-		} catch (IOException e) {
-			System.out.println("ERROR Taking Screen Shot");
-			e.printStackTrace();
-		}
 	
-	}
-	private static String getTimeAppender() {
-		Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-	    SimpleDateFormat sdf1 = new SimpleDateFormat("MM_dd_yyyy_HH-mm");
-       return sdf1.format(timestamp);       
-	}
-	private static String getTimeStamp() {
-		Timestamp timestamp = new Timestamp(System.currentTimeMillis());
-	    SimpleDateFormat sdf1 = new SimpleDateFormat("dd-MM HH:mm:ss");
-       return sdf1.format(timestamp);       
-	}
-	private static void zoomOut() {
-		sleep(2);
-		Robot robot;
-		try {
-			robot = new Robot();
-		
 
-		System.out.println("About to zoom out");
-		for (int i = 0; i < 20; i++) {
-			robot.keyPress(KeyEvent.VK_CONTROL);
-			robot.keyPress(KeyEvent.VK_SUBTRACT);
-			robot.keyRelease(KeyEvent.VK_SUBTRACT);
-			robot.keyRelease(KeyEvent.VK_CONTROL);
-		}		
-		} catch (AWTException e) {
-			e.printStackTrace();
-		}
-	}
+
 	private static void handleArgs(String[] args) {
 		if(args.length>0)
- 		{print("RECEIVED SYSTEM ARGS: "+args.length+"\n-----------------------");
+ 		{WebUtils.print("RECEIVED SYSTEM ARGS: "+args.length+"\n-----------------------");
 			for(String arguements : args)
 			{
 			String []arguement=arguements.split(",");
@@ -475,20 +412,22 @@ try {
  			{
  				if(arg.contains("="))
  					{
- 				//print("Contains");
+ 				//WebUtils.print("Contains");
  						String key=arg.split("=")[0];
  						String value=arg.split("=")[1];
- 						print (key + "  : "+ value);
+ 						WebUtils.print (key + "  : "+ value);
  						if(key.toUpperCase().contentEquals("DEBUG"))debug=Boolean.parseBoolean(value);
  						if(key.toUpperCase().contentEquals("WORKFLOW"))workflow=value;
  						if(key.toUpperCase().contentEquals("CITY"))city=value;
+ 						if(key.toUpperCase().contentEquals("RUNALL"))runAll=Boolean.parseBoolean(value);;
+ 						
  					}
  				else
- 					error(arg + " is in incorrect format");
+ 					WebUtils.error(arg + " is in incorrect format");
  				
  			}
 			}
  		}
-		excelFileName="C:\\Users\\mod-X\\Google Drive\\COVID_INFO\\"+city+"_"+workflow+".csv";
+		
 	}	
 }

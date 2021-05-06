@@ -37,4 +37,12 @@ public class EmailSender {
 			e.printStackTrace();
 		}
 	}
+	@SuppressWarnings("unused")
+	private static void sendEmail() {
+//		String mailMessage="Current Status for : \nProcesed : "+workflow + 
+//        		"\nCompleted At :\t"+WebUtils.getTimeStamp()+(workflow=="Vacant Beds Tracker"?"\nCity Covered :\t"+city:"")
+//        		+"\nMailingList : "+mailingList;
+//        		
+//        EmailSender.SendMail(mailingList, workflow+ " Results",mailMessage, excelFileName,excelFileName);		
+	}
 }
