@@ -1,9 +1,11 @@
 package utils;
 
 import org.apache.commons.mail.DefaultAuthenticator;
+import org.apache.commons.mail.Email;
 import org.apache.commons.mail.EmailAttachment;
 import org.apache.commons.mail.EmailException;
 import org.apache.commons.mail.MultiPartEmail;
+import org.apache.commons.mail.SimpleEmail;
 
 
 public class EmailSender {
@@ -18,7 +20,7 @@ public class EmailSender {
 			email.setSmtpPort(465);
 			email.setAuthenticator(new DefaultAuthenticator("smilecosts00@gmail.com", "Rock-pap3r"));
 			email.setSSLOnConnect(true);
-			email.setFrom("smilecosts00@gmail.com");
+			email.setFrom("	");
 			email.setSubject(subjectLine);
 			email.setMsg(message);
 			String[] addresses=csvToAddress.split(",");
@@ -45,4 +47,24 @@ public class EmailSender {
 //        		
 //        EmailSender.SendMail(mailingList, workflow+ " Results",mailMessage, excelFileName,excelFileName);		
 	}
+	
+public static void sendSuccessMail() 
+{	try {
+	Email email = new SimpleEmail();
+	email.setHostName("smtp.googlemail.com");
+	email.setSmtpPort(465);
+	email.setAuthenticator(new DefaultAuthenticator("smilecosts00@gmail.com", "Rock-pap3r"));
+	email.setSSLOnConnect(true);
+	email.setFrom("smilecosts00@gmail.com");
+	email.setSubject("Job Succeeded");
+	email.setMsg("This is JobSuccess test mail ... :-)");
+	email.addTo("xlautomation8@gmail.com");
+	email.send();
+	}
+catch (EmailException e) {
+	e.printStackTrace();
+
+}
+System.out.println("SUCESS MAIL SENT ");
+}
 }

@@ -85,18 +85,20 @@ public class SiteScrapper {
 	private static Set <String> finalRows = new HashSet<String>() ;
 //,nivi306@gmail.com,xautomation8@gmail.com
 	private static String mailingList="shubhangna.sinha@gmail.com,smilecosts00@gmail.com";
-
+	private static boolean buildSuccess=true;
 	public static void main(String[] args) throws InterruptedException {
 		 	System.out.println("############## STARTING ############## ");
 		 	
 		 	//System.out.println("ARGS: "+ args.length);
 		 	handleArgs(args);
+		 	if(debug)
+		 		baseFileLocation=baseFileLocation+"\\TEST"+"\\";
 ///////GURUGRAM
 		 	if(city.contentEquals("Gurugram")||runAll)
 	 			{excelFileName=baseFileLocation+"Gurugram_"+workflow+".xlsx";
 		 		String[] guruHeader = {"Hospital","HelpLine","Phone No","Normal Bed","Oxygen Bed","ICU Beds","Ventilator Beds","Notes","Comments","Up Votes","Total Beds","Updated On"};
 			 	 int [] hideGuruHeader= {7,8,9,10};
-			 	 try{AppendExcel.writeFile(excelFileName,guruHeader,hideGuruHeader,new GuruGramCovidSite().performRowOperation(),false);}catch(Exception e) {WebUtils.error("ERROR OCCURED WHILE SCRAPPING SITE 2: Govt Site");WebUtils.newScreen("GURUGRAM_FAILURE",driver);}
+			 	 try{AppendExcel.writeFile(excelFileName,guruHeader,hideGuruHeader,new GuruGramCovidSite().performRowOperation(),false);}catch(Exception e) {WebUtils.error("ERROR OCCURED WHILE SCRAPPING SITE 2: Govt Site");WebUtils.newScreen("GURUGRAM_FAILURE",driver);buildSuccess=false;}
 	 			}
 ///////DELHI
 		 		if(city.contentEquals("Delhi")||runAll)
@@ -104,14 +106,16 @@ public class SiteScrapper {
 		 				System.out.println("SITE 2 FOR DELHI ########## : "+ excelFileName+"");
 			            String[] header = {"Hospital","Contact","Phone No","Normal Bed","Oxygen Bed","Address","Found Useful(1hr)","Notes","Comments","Up Votes","Total Beds","Updated On"};
 			            int [] hideHeader= {7,8,9};
-			            try {AppendExcel.writeFile(excelFileName,header,hideHeader,new DelhiGovCovidSite().performRowOperation(),true);}catch(Exception e) {WebUtils.error("ERROR OCCURED WHILE SCRAPPING SITE 2: Govt Site");WebUtils.newScreen("DELHI_FAILURE",driver);}
+			            try {AppendExcel.writeFile(excelFileName,header,hideHeader,new DelhiGovCovidSite().performRowOperation(),true);}catch(Exception e) {WebUtils.error("ERROR OCCURED WHILE SCRAPPING SITE 2: Govt Site");WebUtils.newScreen("DELHI_FAILURE",driver);buildSuccess=false;}
 		 			}
 /////// GENERIC 
 		 		try {///site 1
 		 			excelFileName=baseFileLocation+city+"_"+workflow+".xlsx";
 			 		GetBedsInfo();
-		 		}catch(Exception e) {WebUtils.error("ERROR OCCURED WHILE SCRAPPING SITE 1: "+url);e.printStackTrace();WebUtils.newScreen(city+"_FAILURE",driver);}
+		 		}catch(Exception e) {WebUtils.error("ERROR OCCURED WHILE SCRAPPING SITE 1: "+url);e.printStackTrace();WebUtils.newScreen(city+"_FAILURE",driver);buildSuccess=false;}
 	        System.out.println("################ END OF PROGRAM ##################");
+	        if(buildSuccess)
+	        	;//EmailSender.sendSuccessMail();
 	}
 
 	private static void GetBedsInfo() {
